@@ -1,0 +1,127 @@
+:root {
+	--gray: oklch(80% 2% 200);
+	--white: #ffffff;
+	--color-acent: oklch(65% 50% 0);
+	--color-acent-transparent: oklch(65% 50% 0 / 50%);
+}
+
+body {
+	font: 100%/1.5 system-ui;
+	max-width: 100ch;
+	margin-inline: max(1em, (100% - 100ch) / 2);
+	padding: 1cm;
+}
+ 
+nav ul,
+nav il {
+	display: contents; /* step 2.1 */
+}
+
+nav {
+	display: flex;
+	margin-bottom: 1em;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+	border-bottom-color: black;
+}
+
+nav a {
+	flex: 1;
+	text-decoration: none;
+	color: inherit;
+	text-align: center;
+	padding: 0.1em;
+}
+
+nav a.current {
+	border-bottom-width: 0.4em; 
+	border-bottom-style: solid;
+	border-bottom-color: var(--gray);
+	padding-bottom:0.1em;
+	font-weight: bold;
+}
+
+nav a:hover {
+	background-color: var(--gray);
+	font-weight: bold;
+	margin: 0 auto;
+	
+	border-bottom-width: 0.4em; 
+	border-bottom-style: solid;
+	border-bottom-color: var(--color-acent);
+	padding: -0.1em;
+}
+
+input,textarea,button {
+    font: inherit; /*step 3.1 schmoopsie.poo@mic.fr*/
+}
+
+/* input, textarea, buttom {
+	font: inherit;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+label, input, textarea, buttom {
+	display: block;
+}
+
+label {
+	margin-block: 1rem;
+} */
+
+form {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 1em;
+}
+
+form label {
+	display: grid;
+	grid-template-columns: subgrid;
+}
+
+#button, label {
+	grid-column: 1 / -1;
+}
+
+img{
+	max-width: 100%; /*step 4.2*/
+}
+
+.projects {
+	display:grid; /*step 4.3*/
+	grid-template-columns : repeat(auto-fill, minmax(15em, 1fr));/*step 4.3*/
+	min-width: 15em; /*step 4.3*/
+	max-width: 1fr; /*step 4.3*/
+}
+
+article{
+	margin: 10px; /*step 4.3*/
+	display: grid; /*step 4.4*/
+	grid-template-rows: subgrid; /*step 4.4*/
+	grid-row: span 3; /*step 4.4*/
+}
+
+article h2{
+	margin: 0; /*step 4.4*/
+}
+
+h1 {
+	font-size: 400%; /*step 4.5*/
+}
+h1, h2, h3, h4, h5, h6{
+	line-height: 1.1; /*step 4.5*/
+	text-wrap: balance; /*step 4.5*/
+}
+
+.resume{
+	display: grid; /*step 5 free*/
+	grid-template-columns: repeat(2, 1fr); /*step 5 free*/
+	min-width: 25em; /*step 5 free*/
+}
+header{
+	background-color: var(--color-header-bg); /*step 5 free*/
+	font-weight: bold; /*step 5 free*/
+	text-transform: uppercase; /*step 5 free*/
+} 
