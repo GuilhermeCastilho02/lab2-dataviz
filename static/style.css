@@ -12,9 +12,9 @@ body {
 	padding: 1cm;
 }
  
-nav ul,
+/* nav ul,
 nav il {
-	display: contents; /* step 2.1 */
+	display: contents; 
 }
 
 nav {
@@ -53,8 +53,7 @@ nav a:hover {
 }
 
 input,textarea,button {
-    font: inherit; /*step 3.1 schmoopsie.poo@mic.fr*/
-}
+    font: inherit;*/
 
 /* input, textarea, buttom {
 	font: inherit;
