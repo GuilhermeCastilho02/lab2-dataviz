@@ -49,6 +49,7 @@ let pages = [
     { url: "/projects", title: "Projects" },
     { url: "/contact", title: "Contact" },
     { url: "/cv", title: "Resume" },
+    { url: "/meta", title: "Meta" },
     {url: "https://github.com/GuilhermeCastilho02", title:"Github"}
 ];
 
@@ -80,6 +81,5 @@ $: localStorage.colorScheme = colorScheme;
         <option value="dark"> Dark </option>
     </select>
 </label>
-
 
 <slot />
