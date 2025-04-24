@@ -72,7 +72,7 @@
     let clickedCommits = [];
 
     $: allTypes = Array.from(new Set(data.map(d => d.type)));
-    $: selectedLines = (clickedCommits.length > 0 ? clickedCommits : commits).flatMap(d => d.lines);
+    $: selectedLines = (clickedCommits.length > 0 ? clickedCommits : filteredCommits).flatMap(d => d.lines);
     $: selectedCounts = d3.rollup(
         selectedLines,
         v => v.length,
@@ -80,6 +80,14 @@
     );
     $: languageBreakdown = allTypes.map(type => [type, selectedCounts.get(type) || 0]);
 
+    let commitProgress = 100;
+    let filteredCommits;
+    $: timeScale = d3.scaleTime().domain([minDate,maxDatePlusOne]).range([0,100]);
+    $: commitMaxTime = timeScale.invert(commitProgress);
+    $: filteredCommits = commits.filter(commits => (commits.datetime < commitMaxTime));
+
+    let filteredData;
+    $: filteredData = data.filter(commits => (commits.datetime < commitMaxTime));   
 
     async function dotInteraction (index, evt) {
         let hoveredDot = evt.target;
@@ -146,7 +154,6 @@
 
 <h1>Meta</h1>
 
-
 <dl class="info tooltip" hidden={hoveredIndex === -1} style="top: {cursor.y}px; left: {cursor.x}px" bind:this={commitTooltip}>
     <dt>Commit</dt>
     <dd><a href="{ hoveredCommit.url }" target="_blank">{ hoveredCommit.id }</a></dd>
@@ -163,9 +170,17 @@
     <!-- Add: Time, author, lines edited -->
 </dl>
 
+<div class="slider-container">
+    <div class="slider">
+        <label for="slider">Show commits until:</label>
+        <input type="range" id="slider" name="slider" min=0 max=100 bind:value={commitProgress}/>
+    </div>
+    <time class="time-label">{commitMaxTime.toLocaleString()}</time>
+</div>
+
 <svg viewBox="0 0 {width} {height}">
     <g class="dots">
-        {#each commits as commit, index }
+        {#each filteredCommits as commit, index }
             <circle
                 class:selected={ clickedCommits.includes(commit) }
                 on:click={ evt => dotInteraction(index, evt) }
@@ -184,6 +199,8 @@
     <g class="gridlines" transform="translate({usableArea.left}, 0)" bind:this={yAxisGridlines} />
 </svg>
 
+<Bar data={languageBreakdown} width={width} />
+
 <p>Total lines of code: {data.length}</p>
 
 <section>
@@ -192,9 +209,9 @@
         <dt>Total <abbr title="Lines of code">LOC</abbr></dt>
         <dd>{data.length}</dd>
         <dt>Files</dt>
-        <dd>{d3.groups(data, d => d.file).length}</dd>
+        <dd>{d3.groups(filteredData, d => d.file).length}</dd>
         <dt>Commits</dt>
-        <dd>{d3.groups(data, d => d.commit).length}</dd>
+        <dd>{d3.groups(filteredData, d => d.commit).length}</dd>
     </dl>
 </section>
 
@@ -259,6 +276,10 @@
         &:hover {
             transform: scale(1.5);
         }
+
+        @starting-style {
+            r: 0;
+        }
     }
     .info{
         display: grid;
@@ -281,5 +302,17 @@
     .selected {
         fill: var(--color-accent);
     }
-
+    .slider-container{
+        display:grid;
+    }
+    .slider{
+        display: flex;
+    }
+    #slider{
+        flex:1;
+    }
+    .time-label{
+        font-size: 0.75em;
+        text-align: right;
+    }
 </style>
