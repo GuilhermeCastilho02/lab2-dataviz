@@ -7,6 +7,14 @@
 
     import { onMount } from "svelte";
 
+    import {
+        computePosition,
+        autoPlacement,
+        offset,
+    } from '@floating-ui/dom';
+
+    import Bar from '$lib/Bar.svelte';
+
     let data = [];
     let commits = [];
     let width = 1000, height = 600;
@@ -51,9 +59,55 @@
         );
     }
 
+    $: rScale = d3.scaleLinear()
+                .domain(d3.extent(commits.map(d=>d.totalLines)))
+                .range([2, 30]);
+
     let hoveredIndex = -1;
     $: hoveredCommit = commits[hoveredIndex] ?? hoveredCommit ?? {};
 
+    let commitTooltip;
+    let tooltipPosition = {x: 0, y: 0};
+
+    let clickedCommits = [];
+
+    $: allTypes = Array.from(new Set(data.map(d => d.type)));
+    $: selectedLines = (clickedCommits.length > 0 ? clickedCommits : commits).flatMap(d => d.lines);
+    $: selectedCounts = d3.rollup(
+        selectedLines,
+        v => v.length,
+        d => d.type
+    );
+    $: languageBreakdown = allTypes.map(type => [type, selectedCounts.get(type) || 0]);
+
+
+    async function dotInteraction (index, evt) {
+        let hoveredDot = evt.target;
+        if (evt.type === "mouseenter") {
+            hoveredIndex = index;
+            cursor = {x: evt.x, y: evt.y};
+            tooltipPosition = await computePosition(hoveredDot, commitTooltip, {
+                strategy: "fixed", // because we use position: fixed
+                middleware: [
+                    offset(5), // spacing from tooltip to dot
+                    autoPlacement() // see https://floating-ui.com/docs/autoplacement
+                ],
+            });        }
+        else if (evt.type === "mouseleave") {
+            hoveredIndex = -1
+        }
+        else if (evt.type === "click") {
+            let commit = commits[index]
+            if (!clickedCommits.includes(commit)) {
+                // Add the commit to the clickedCommits array
+                clickedCommits = [...clickedCommits, commit];
+            }
+            else {
+                    // Remove the commit from the array
+                    clickedCommits = clickedCommits.filter(c => c !== commit);
+            }
+        }
+    }
 
     onMount(async () => {
         data = await d3.csv("./loc.csv", row => ({
@@ -74,6 +128,7 @@
         hourFrac: datetime.getHours() + datetime.getMinutes() / 60,
         totalLines: lines.length
     };
+    commits = d3.sort(commits, d => -d.totalLines);
 
     // Like ret.lines = lines
     // but non-enumerable so it doesn’t show up in JSON.stringify
@@ -92,7 +147,7 @@
 <h1>Meta</h1>
 
 
-<dl class="info tooltip" hidden={hoveredIndex === -1} style="top: {cursor.y}px; left: {cursor.x}px">
+<dl class="info tooltip" hidden={hoveredIndex === -1} style="top: {cursor.y}px; left: {cursor.x}px" bind:this={commitTooltip}>
     <dt>Commit</dt>
     <dd><a href="{ hoveredCommit.url }" target="_blank">{ hoveredCommit.id }</a></dd>
 
@@ -111,16 +166,16 @@
 <svg viewBox="0 0 {width} {height}">
     <g class="dots">
         {#each commits as commit, index }
-            <circle        
-                on:mouseenter={evt => {
-                    hoveredIndex = index;
-                    cursor = {x: evt.x, y: evt.y};
-                }}
-                on:mouseleave={evt => hoveredIndex = -1}
+            <circle
+                class:selected={ clickedCommits.includes(commit) }
+                on:click={ evt => dotInteraction(index, evt) }
+                on:mouseenter={evt => dotInteraction(index, evt)}
+                on:mouseleave={evt => dotInteraction(index, evt)}
                 cx={ xScale(commit.datetime) }
                 cy={ yScale(commit.hourFrac) }
-                r="5"
+                r={ rScale(commit.totalLines) }
                 fill="steelblue"
+                fill-opacity="0.5"
             />
         {/each}
     </g>
@@ -221,6 +276,10 @@
             opacity: 0;
             visibility: hidden;
         }
+    }
+
+    .selected {
+        fill: var(--color-accent);
     }
 
 </style>
