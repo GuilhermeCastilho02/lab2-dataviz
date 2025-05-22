@@ -4,6 +4,7 @@
 
 <script>
     import * as d3 from "d3";
+    import Scrolly from "svelte-scrolly";
 
     import { onMount } from "svelte";
 
@@ -14,6 +15,7 @@
     } from '@floating-ui/dom';
 
     import Bar from '$lib/Bar.svelte';
+    import FileLines from "$lib/FileLines.svelte";
 
     let data = [];
     let commits = [];
@@ -119,13 +121,14 @@
 
     onMount(async () => {
         data = await d3.csv("./loc.csv", row => ({
-    ...row,
-    line: Number(row.line), // or just +row.line
-    depth: Number(row.depth),
-    length: Number(row.length),
-    date: new Date(row.date + "T00:00" + row.timezone),
-    datetime: new Date(row.datetime)
+            ...row,
+            line: Number(row.line), // or just +row.line
+            depth: Number(row.depth),
+            length: Number(row.length),
+            date: new Date(row.date + "T00:00" + row.timezone),
+            datetime: new Date(row.datetime)
     }));
+
     commits = d3.groups(data, d => d.commit).map(([commit, lines]) => {
     let first = lines[0];
     let {author, date, time, timezone, datetime} = first;
@@ -170,34 +173,70 @@
     <!-- Add: Time, author, lines edited -->
 </dl>
 
-<div class="slider-container">
+<!-- <div class="slider-container">
     <div class="slider">
         <label for="slider">Show commits until:</label>
         <input type="range" id="slider" name="slider" min=0 max=100 bind:value={commitProgress}/>
     </div>
     <time class="time-label">{commitMaxTime.toLocaleString()}</time>
-</div>
+</div> -->
 
-<svg viewBox="0 0 {width} {height}">
-    <g class="dots">
-        {#each filteredCommits as commit, index }
-            <circle
-                class:selected={ clickedCommits.includes(commit) }
-                on:click={ evt => dotInteraction(index, evt) }
-                on:mouseenter={evt => dotInteraction(index, evt)}
-                on:mouseleave={evt => dotInteraction(index, evt)}
-                cx={ xScale(commit.datetime) }
-                cy={ yScale(commit.hourFrac) }
-                r={ rScale(commit.totalLines) }
-                fill="steelblue"
-                fill-opacity="0.5"
-            />
-        {/each}
-    </g>
-    <g transform="translate(0, {usableArea.bottom})" bind:this={xAxis} />
-    <g transform="translate({usableArea.left}, 0)" bind:this={yAxis} />
-    <g class="gridlines" transform="translate({usableArea.left}, 0)" bind:this={yAxisGridlines} />
-</svg>
+<Scrolly bind:progress={ commitProgress }>
+	{#each commits as commit, index }
+        <p>
+            On {commit.datetime.toLocaleString("en", {dateStyle: "full", timeStyle: "short"})},
+            {index === 0 
+                ? "I set forth on my very first commit, beginning a magical journey of code. You can view it "
+                : "I added another commit. See it "}
+            <a href="{commit.url}" target="_blank">
+                {index === 0 ? "here" : "here"}
+            </a>.
+            This update transformed {commit.totalLines} lines across { d3.rollups(commit.lines, D => D.length, d => d.file).length } files.
+            With every commit, our project grows.
+        </p>
+    {/each}
+	<svelte:fragment slot="viz">
+		<svg viewBox="0 0 {width} {height}">
+            <g class="dots">
+                {#each filteredCommits as commit, index }
+                    <circle
+                        class:selected={ clickedCommits.includes(commit) }
+                        on:click={ evt => dotInteraction(index, evt) }
+                        on:mouseenter={evt => dotInteraction(index, evt)}
+                        on:mouseleave={evt => dotInteraction(index, evt)}
+                        cx={ xScale(commit.datetime) }
+                        cy={ yScale(commit.hourFrac) }
+                        r={ rScale(commit.totalLines) }
+                        fill="steelblue"
+                        fill-opacity="0.5"
+                    />
+                {/each}
+            </g>
+            <g transform="translate(0, {usableArea.bottom})" bind:this={xAxis} />
+            <g transform="translate({usableArea.left}, 0)" bind:this={yAxis} />
+            <g class="gridlines" transform="translate({usableArea.left}, 0)" bind:this={yAxisGridlines} />
+        </svg>
+	</svelte:fragment>
+</Scrolly>
+
+<Scrolly bind:progress={ commitProgress }>
+	{#each commits as commit, index }
+        <p>
+            On {commit.datetime.toLocaleString("en", {dateStyle: "full", timeStyle: "short"})},
+            {index === 0 
+                ? "I set forth on my very first commit, beginning a magical journey of code. You can view it "
+                : "I added another commit. See it "}
+            <a href="{commit.url}" target="_blank">
+                {index === 0 ? "here" : "here"}
+            </a>.
+            This update transformed {commit.totalLines} lines across { d3.rollups(commit.lines, D => D.length, d => d.file).length } files.
+            With every commit, our project grows.
+        </p>
+    {/each}
+	<svelte:fragment slot="viz">
+		<FileLines lines={filteredData} width={width}/>
+	</svelte:fragment>
+</Scrolly>
 
 <Bar data={languageBreakdown} width={width} />
 
